@@ -7,6 +7,8 @@ import com.pet_adoption.pet_adoption.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ConcurrentHashMap;
 import jakarta.annotation.PostConstruct;  // Or javax.annotation.PostConstruct depending on Spring version
 import com.pet_adoption.pet_adoption.model.Role;
 import java.time.LocalDateTime;
@@ -25,6 +27,8 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
+
+    private final ConcurrentHashMap<String, String> otpStorage = new ConcurrentHashMap<>();
 
     // CRUD
     public List<User> getAllUsers() {
