@@ -22,8 +22,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role; // ADMIN, ADOPTER
+    private Role role;  // Now using enum
 
     private String phone;
     private String address;

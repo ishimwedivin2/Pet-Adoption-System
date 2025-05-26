@@ -6,7 +6,6 @@ import com.pet_adoption.pet_adoption.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -53,7 +52,33 @@ public class UserController {
     public User updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         return userService.updateUser(id, userDetails);
     }
+    @PostMapping("/request-password-reset")
+    public ResponseEntity<String> requestPasswordReset(@RequestParam String email) {
+        userService.getAllUsers().stream()
+                .filter(u -> u.getEmail().equalsIgnoreCase(email))
+                .findFirst()
+                .ifPresent(userService::createPasswordResetToken);
+        return ResponseEntity.ok("If a user with that email exists, a reset link has been sent.");
+    }
+
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<Boolean> validateResetToken(@RequestParam String token) {
+        boolean valid = userService.isResetTokenValid(token);
+        return ResponseEntity.ok(valid);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        boolean success = userService.resetPassword(token, newPassword);
+        if (success) {
+            return ResponseEntity.ok("Password reset successful.");
+        } else {
+            return ResponseEntity.badRequest().body("Invalid or expired reset token.");
+        }
+    }
+
 
 
 
 }
+
