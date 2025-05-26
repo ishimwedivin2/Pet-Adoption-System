@@ -4,10 +4,14 @@ package com.pet_adoption.pet_adoption.controller;
 import com.pet_adoption.pet_adoption.model.User;
 import com.pet_adoption.pet_adoption.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
+
+import com.pet_adoption.pet_adoption.exception.UserNotFoundException;
+
 
 @RestController
 @RequestMapping("/users")
@@ -66,13 +70,15 @@ public class UserController {
 
 
     @PostMapping("/request-password-reset")
-    public ResponseEntity<String> requestPasswordReset(@RequestParam String email) {
-        userService.getAllUsers().stream()
-                .filter(u -> u.getEmail().equalsIgnoreCase(email))
-                .findFirst()
-                .ifPresent(userService::createPasswordResetToken);
-        return ResponseEntity.ok("If a user with that email exists, a reset link has been sent.");
+    public ResponseEntity<String> requestPasswordReset(@RequestParam("email") String email) {
+        try {
+            userService.requestPasswordReset(email);
+            return ResponseEntity.ok("Password reset link sent to your email.");
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
+
 
     @GetMapping("/validate-reset-token")
     public ResponseEntity<Boolean> validateResetToken(@RequestParam String token) {

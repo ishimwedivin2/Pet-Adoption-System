@@ -7,6 +7,8 @@ import com.pet_adoption.pet_adoption.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import com.pet_adoption.pet_adoption.exception.UserNotFoundException;
+
 
 import java.util.concurrent.ConcurrentHashMap;
 import jakarta.annotation.PostConstruct;  // Or javax.annotation.PostConstruct depending on Spring version
@@ -42,6 +44,11 @@ public class UserService {
     public User createUser(User user) {
         return userRepository.save(user);
     }
+
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
 
     public User updateUser(Long id, User userDetails) {
         return userRepository.findById(id).map(user -> {
@@ -110,6 +117,58 @@ public class UserService {
         resetTokenRepository.save(resetToken);
         sendPasswordResetEmail(user, token);
     }
+//
+//    public void requestPasswordReset(String email) {
+//        User user = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+//
+//        // Generate token
+//        String token = UUID.randomUUID().toString();
+//        LocalDateTime expiry = LocalDateTime.now().plusMinutes(15);
+//
+//        // Save token & expiry
+//        user.setResetToken(token);
+//        user.setResetTokenExpiry(expiry);
+//        userRepository.save(user);
+//
+//        // Send reset email
+//        sendPasswordResetEmail(user, token);
+//    }
+
+    public void requestPasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        // Generate token and expiry
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(30);
+
+        // Check if user already has a ResetToken
+        Optional<ResetToken> existingTokenOpt = resetTokenRepository.findByUser(user);
+
+
+        if (existingTokenOpt.isPresent()) {
+            // Update existing token
+            ResetToken existingToken = existingTokenOpt.get();
+            existingToken.setToken(token);
+            existingToken.setExpiryDate(expiry);
+            resetTokenRepository.save(existingToken);
+        } else {
+            // Create new token
+            ResetToken resetToken = new ResetToken();
+            resetToken.setToken(token);
+            resetToken.setUser(user);
+            resetToken.setExpiryDate(expiry);
+            resetTokenRepository.save(resetToken);
+        }
+
+        // Send reset email with token
+        sendPasswordResetEmail(user, token);
+    }
+
+
+
+
 
     public void sendPasswordResetEmail(User user, String token) {
         String resetUrl = "http://localhost:8080/reset-password?token=" + token;
