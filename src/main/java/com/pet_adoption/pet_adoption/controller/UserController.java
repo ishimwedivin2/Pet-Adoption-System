@@ -32,6 +32,11 @@ public class UserController {
         return userService.createUser(user);
     }
 
+    @PutMapping("/{id}")
+    public User updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+        return userService.updateUser(id, userDetails);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
@@ -48,10 +53,18 @@ public class UserController {
             return ResponseEntity.status(401).body("Invalid username or password");
         }
     }
-    @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User userDetails) {
-        return userService.updateUser(id, userDetails);
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<String> verifyOtp(@RequestParam String username, @RequestParam String otp) {
+        boolean success = userService.verifyOtp(username, otp);
+        if (success) {
+            return ResponseEntity.ok("2FA verification successful. You are now logged in.");
+        } else {
+            return ResponseEntity.status(401).body("Invalid OTP. Try again.");
+        }
     }
+
+
     @PostMapping("/request-password-reset")
     public ResponseEntity<String> requestPasswordReset(@RequestParam String email) {
         userService.getAllUsers().stream()

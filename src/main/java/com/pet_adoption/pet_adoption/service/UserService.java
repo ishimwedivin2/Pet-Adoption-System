@@ -59,13 +59,45 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+//    public Optional<User> login(String username, String password) {
+//        Optional<User> user = userRepository.findByUsername(username);
+//        if (user.isPresent() && user.get().getPassword().equals(password)) {
+//            return user;
+//        }
+//        return Optional.empty();
+//    }
+
     public Optional<User> login(String username, String password) {
         Optional<User> user = userRepository.findByUsername(username);
         if (user.isPresent() && user.get().getPassword().equals(password)) {
-            return user;
+            // Step 1: Generate OTP
+            String otp = String.format("%06d", (int)(Math.random() * 1000000));
+
+            // Step 2: Store OTP temporarily
+            otpStorage.put(username, otp);
+
+            // Step 3: Send OTP to user email
+            String subject = "Your Pet Adoption 2FA Code";
+            String message = "Hi " + username + ",\n\nYour 2FA code is: " + otp + "\n\nExpires in 5 minutes.";
+            emailService.sendEmail(user.get().getEmail(), subject, message);
+
+            return user; // Authentication succeeded, pending OTP verification
         }
         return Optional.empty();
     }
+
+    public boolean verifyOtp(String username, String otp) {
+        String storedOtp = otpStorage.get(username);
+        if (storedOtp != null && storedOtp.equals(otp)) {
+            otpStorage.remove(username); // One-time use
+            return true;
+        }
+        return false;
+    }
+
+
+
+
 
     // === PASSWORD RESET FLOW ===
 
